@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Turn photos of your work into one clean PDF ready for Canvas.">
+  <title>Canvas-Ready Image to PDF Maker</title>
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script defer src="app.js?v=2"></script>
+</head>
+<body>
+  <a class="skip-link" href="#workspace">Skip to editor</a>
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true">PDF</div>
+    <div>
+      <h1>Canvas-Ready Image to PDF Maker</h1>
+      <p>Photos in. One PDF out.</p>
+    </div>
+    <div class="privacy-pill" title="Your work is processed only in this browser">
+      <span aria-hidden="true">&#128274;</span> Stays on this device
+    </div>
+  </header>
+
+  <main id="workspace" class="app-shell" tabindex="-1">
+    <section id="emptyState" class="empty-state" aria-labelledby="startTitle">
+      <div class="step-chip">Step 1 of 3</div>
+      <h2 id="startTitle">Add photos of your work</h2>
+      <p>Choose one or more pages. You can fix the order and mark them up before making your PDF.</p>
+      <div class="start-actions">
+        <label class="button primary camera-button">
+          <span aria-hidden="true">&#128247;</span> Take a photo
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+        </label>
+        <label class="button secondary">
+          <span aria-hidden="true">&#128444;</span> Choose images
+          <input id="fileInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden>
+        </label>
+      </div>
+      <p class="format-note">JPG, PNG, WebP, and most iPhone photos &middot; Add up to 20 pages</p>
+      <div class="how-it-works" aria-label="Three steps">
+        <div><b>1</b><span>Add photos</span></div>
+        <div><b>2</b><span>Fix and mark up</span></div>
+        <div><b>3</b><span>Download PDF</span></div>
+      </div>
+    </section>
+
+    <section id="editor" class="editor" hidden aria-label="Image editor">
+      <aside class="pages-panel" aria-label="Pages">
+        <div class="panel-heading">
+          <div><span class="eyebrow">Step 1</span><h2>Pages <span id="pageCount">0</span></h2></div>
+          <label class="icon-button add-page" title="Add more pages" aria-label="Add more pages">+
+            <input id="moreInput" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden>
+          </label>
+        </div>
+        <div id="thumbnails" class="thumbnails" role="list" aria-label="PDF pages"></div>
+      </aside>
+
+      <section class="work-panel">
+        <div class="section-heading">
+          <div><span class="eyebrow">Step 2</span><h2>Fix and mark up</h2></div>
+          <button id="clearAll" class="text-button danger" type="button">Start over</button>
+        </div>
+
+        <div class="toolbar" role="toolbar" aria-label="Editing tools">
+          <div class="tool-group">
+            <button class="tool active" data-tool="pen" type="button" aria-pressed="true"><span aria-hidden="true">&#9998;</span> Pen</button>
+            <button class="tool" data-tool="highlight" type="button" aria-pressed="false"><span class="highlight-icon" aria-hidden="true">H</span> Highlight</button>
+            <button class="tool" data-tool="text" type="button" aria-pressed="false"><span aria-hidden="true">T</span> Text</button>
+            <button class="tool" data-tool="eraser" type="button" aria-pressed="false"><span aria-hidden="true">&#9003;</span> Eraser</button>
+            <button class="tool" data-tool="crop" type="button" aria-pressed="false"><span aria-hidden="true">&#9698;</span> Crop</button>
+          </div>
+          <div class="tool-group utility-tools">
+            <button id="rotate" class="tool" type="button" title="Rotate clockwise"><span aria-hidden="true">&#8635;</span> Rotate</button>
+            <button id="undo" class="tool icon-only" type="button" title="Undo" aria-label="Undo" disabled>&#8630;</button>
+            <button id="redo" class="tool icon-only" type="button" title="Redo" aria-label="Redo" disabled>&#8631;</button>
+          </div>
+          <div id="toolOptions" class="tool-options">
+            <label>Color <input id="color" type="color" value="#1769e0"></label>
+            <label>Size <input id="size" type="range" min="2" max="28" value="5"><output id="sizeOutput">5</output></label>
+          </div>
+        </div>
+
+        <div id="textBar" class="text-bar" hidden>
+          <label for="textInput">Text to place</label>
+          <input id="textInput" type="text" maxlength="120" placeholder="Type a note, then click the page">
+          <span>Click to place it. Drag placed text to move it.</span>
+        </div>
+        <div id="cropBar" class="crop-bar" hidden>
+          Drag over the part you want to keep.
+          <button id="applyCrop" class="small-button" type="button" disabled>Apply crop</button>
+          <button id="cancelCrop" class="small-button ghost" type="button">Cancel</button>
+        </div>
+
+        <div id="canvasStage" class="canvas-stage">
+          <div id="canvasWrap" class="canvas-wrap">
+            <canvas id="displayCanvas" aria-label="Current page. Use the selected tool to mark it up."></canvas>
+            <div id="cropSelection" class="crop-selection" hidden></div>
+          </div>
+        </div>
+        <div class="zoom-row">
+          <label for="zoom">Page size</label>
+          <input id="zoom" type="range" min="60" max="150" value="100">
+          <output id="zoomOutput">100%</output>
+        </div>
+      </section>
+
+      <aside class="finish-panel">
+        <span class="eyebrow">Step 3</span>
+        <h2>Make your PDF</h2>
+        <div class="check-card">
+          <div><span aria-hidden="true">&#10003;</span><p><b id="readyPages">0 pages</b><br><small>in one PDF</small></p></div>
+          <div><span aria-hidden="true">&#10003;</span><p><b>Private</b><br><small>nothing was uploaded</small></p></div>
+        </div>
+        <label class="field-label" for="filename">File name</label>
+        <div class="filename-field"><input id="filename" value="Math172_Assignment" maxlength="80"><span>.pdf</span></div>
+        <label class="field-label" for="quality">Image quality</label>
+        <select id="quality">
+          <option value="0.82">Recommended - clear and smaller</option>
+          <option value="0.95">High - larger file</option>
+          <option value="0.68">Compact - smallest file</option>
+        </select>
+        <button id="previewPdf" class="button secondary full" type="button">Preview pages</button>
+        <button id="downloadPdf" class="button primary full" type="button"><span aria-hidden="true">&#8681;</span> Download PDF</button>
+        <p id="exportMessage" class="export-message" role="status" aria-live="polite"></p>
+        <p class="canvas-tip"><b>Next:</b> Open Canvas, choose your assignment, and upload the downloaded PDF.</p>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="previewDialog" aria-labelledby="previewTitle">
+    <div class="dialog-head"><div><span class="eyebrow">Final check</span><h2 id="previewTitle">Are your pages clear and in order?</h2></div><button id="closePreview" class="icon-button" aria-label="Close preview">&times;</button></div>
+    <div id="previewGrid" class="preview-grid"></div>
+    <div class="dialog-actions"><button id="dialogBack" class="button secondary" type="button">Keep editing</button><button id="dialogDownload" class="button primary" type="button">Download PDF</button></div>
+  </dialog>
+
+  <dialog id="confirmDialog" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Start over?</h2>
+    <p>This removes every page and annotation from this browser.</p>
+    <div class="dialog-actions"><button id="cancelClear" class="button secondary" type="button">Cancel</button><button id="confirmClear" class="button danger-button" type="button">Remove everything</button></div>
+  </dialog>
+
+  <div id="busy" class="busy" hidden role="status" aria-live="polite"><div class="spinner"></div><p id="busyText">Preparing your pages...</p></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
